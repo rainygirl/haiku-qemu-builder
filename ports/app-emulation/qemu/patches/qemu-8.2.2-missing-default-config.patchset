@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000001 Mon Sep 17 00:00:00 2001
+From: QEMU Haiku Builder <builder@localhost>
+Date: Thu, 31 Jul 2026 10:00:00 +0900
+Subject: Haiku: ignore an absent relocated default configuration
+
+Haiku's error translation does not reliably return POSIX ENOENT here.
+Avoid opening the optional default file when it does not exist.
+
+diff --git a/system/vl.c b/system/vl.c
+index 1b3e4ec..1111111 100644
+--- a/system/vl.c
++++ b/system/vl.c
+@@ -2228,6 +2228,10 @@ static void qemu_read_default_config_file(Error **errp)
+     int ret;
+     g_autofree char *file = get_relocated_path(CONFIG_QEMU_CONFDIR "/qemu.conf");
+ 
++    if (!g_file_test(file, G_FILE_TEST_EXISTS)) {
++        return;
++    }
++
+     ret = qemu_read_config_file(file, qemu_parse_config_group, errp);
+     if (ret < 0) {
+         if (ret == -ENOENT) {
