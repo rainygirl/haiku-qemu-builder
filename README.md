@@ -1,5 +1,7 @@
 # QEMU for HaikuOS x86_gcc2
 
+한국어 버전은 [`README.ko.md`](README.ko.md) 참고 / For Korean, see [`README.ko.md`](README.ko.md).
+
 This project builds QEMU 8.2.2 from source on HaikuOS R1/beta6 x86_gcc2
 without removing WebPositive or HaikuWebKit. It packages the result as HPKG
 files and can install the common QEMU tools and x86 system emulators.
