@@ -55,6 +55,45 @@ The build uses one Ninja job by default to reduce memory pressure. Set
 BUILD_JOBS=2 ./build.sh
 ```
 
+## GLib
+
+QEMU needs a `glib2_x86` and a `glib2_x86_devel` of the *same* version.
+R1/beta6 x86_gcc2 ships `glib2_x86` 2.57.1 without the devel package, and
+HaikuPorts has since moved `glib2_x86` to 2.88.1, so the repository can no
+longer supply a matching devel package. The QEMU recipe's unversioned
+`devel:libglib_2.0_x86` then resolves to whichever provider haikuporter finds
+newest, and the build fails on the version mismatch.
+
+`build.sh` therefore decides where GLib comes from and pins the QEMU recipe to
+that exact version:
+
+- `installed` - a matching `glib2_x86` / `glib2_x86_devel` pair is already
+  installed. Nothing is built or downloaded.
+- `repository` - the repository offers a `glib2_x86_devel` matching the
+  installed `glib2_x86` (or nothing is installed yet). Both come from there.
+- `local` - neither works, so the bundled GLib 2.57.1 recipe is built. This is
+  the path a stock beta6 install takes.
+
+The bundled recipe is dropped from the work tree in the first two cases, which
+keeps haikuporter from rebuilding GLib just because the recipe carries a higher
+package revision.
+
+Override the choice with `GLIB_SOURCE`:
+
+```sh
+GLIB_SOURCE=installed ./build.sh
+GLIB_SOURCE=repository ./build.sh
+GLIB_SOURCE=local ./build.sh
+```
+
+`install.sh` never installs the local GLib packages on top of a `glib2_x86`
+that is already installed. QEMU links against GLib forwards-compatibly, and
+downgrading `glib2_x86` would break the copy WebPositive and HaikuWebKit use.
+
+`gcc_x86_syslibs_devel` is now installed as a build prerequisite. Without it
+the bundled GLib recipe cannot resolve its `devel:libgcc_x86` build
+requirement and `build.sh` aborts before compiling anything.
+
 Re-running `build.sh` resumes the preserved Ninja build. It does not
 reconfigure QEMU when `build/build.ninja` already exists.
 
